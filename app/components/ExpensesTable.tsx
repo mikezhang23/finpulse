@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState } from "react";
 
 interface Expense {
   id: string;
@@ -25,17 +25,13 @@ export default function ExpensesTable({ data }: ExpensesTableProps) {
   const endIndex = startIndex + itemsPerPage;
   const currentData = data.slice(startIndex, endIndex);
 
-  const handleExport = () => {
-    window.location.href = "/api/export/expenses";
-  };
-
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
       {/* Header */}
       <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
         <h2 className="text-xl font-semibold">Expenses</h2>
-        <button
-          onClick={handleExport}
+        <a
+          href="/api/export/expenses"
           className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors flex items-center gap-2"
         >
           <svg
@@ -52,7 +48,7 @@ export default function ExpensesTable({ data }: ExpensesTableProps) {
             />
           </svg>
           Export CSV
-        </button>
+        </a>
       </div>
 
       {/* Table */}
