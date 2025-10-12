@@ -64,11 +64,11 @@ export default async function Home() {
             {/* Data Tables */}
             <div className="space-y-8">
               {result.kpis.expensesData && result.kpis.expensesData.length > 0 && (
-                <ExpensesTable data={result.kpis.expensesData as any} />
+                <ExpensesTable data={JSON.parse(JSON.stringify(result.kpis.expensesData))} />
               )}
 
               {result.kpis.revenuesData && result.kpis.revenuesData.length > 0 && (
-                <RevenuesTable data={result.kpis.revenuesData as any} />
+                <RevenuesTable data={JSON.parse(JSON.stringify(result.kpis.revenuesData))} />
               )}
             </div>
           </>
