@@ -17,9 +17,9 @@ interface TableInfo {
 
 interface KPIData {
   totalExpenses: number;
-  totalIncome: number;
-  totalAccounts: number;
-  totalBudgets: number;
+  totalRevenues: number;
+  totalAwsCosts: number;
+  totalAuditRuns: number;
   lastRefreshed: string;
 }
 
@@ -74,26 +74,26 @@ export async function refreshAndValidateData(): Promise<{
     const supabase = createServiceRoleClient();
 
     // Fetch counts from all tables in parallel
-    const [expensesResult, incomeResult, accountsResult, budgetsResult] = await Promise.all([
+    const [expensesResult, revenuesResult, awsCostsResult, auditRunsResult] = await Promise.all([
       supabase.from('expenses').select('*', { count: 'exact', head: true }),
-      supabase.from('income').select('*', { count: 'exact', head: true }),
-      supabase.from('accounts').select('*', { count: 'exact', head: true }),
-      supabase.from('budgets').select('*', { count: 'exact', head: true }),
+      supabase.from('revenues').select('*', { count: 'exact', head: true }),
+      supabase.from('aws_costs').select('*', { count: 'exact', head: true }),
+      supabase.from('audit_runs').select('*', { count: 'exact', head: true }),
     ]);
 
     // Check for errors
     if (expensesResult.error) throw new Error(`Expenses: ${expensesResult.error.message}`);
-    if (incomeResult.error) throw new Error(`Income: ${incomeResult.error.message}`);
-    if (accountsResult.error) throw new Error(`Accounts: ${accountsResult.error.message}`);
-    if (budgetsResult.error) throw new Error(`Budgets: ${budgetsResult.error.message}`);
+    if (revenuesResult.error) throw new Error(`Revenues: ${revenuesResult.error.message}`);
+    if (awsCostsResult.error) throw new Error(`AWS Costs: ${awsCostsResult.error.message}`);
+    if (auditRunsResult.error) throw new Error(`Audit Runs: ${auditRunsResult.error.message}`);
 
     return {
       success: true,
       kpis: {
         totalExpenses: expensesResult.count || 0,
-        totalIncome: incomeResult.count || 0,
-        totalAccounts: accountsResult.count || 0,
-        totalBudgets: budgetsResult.count || 0,
+        totalRevenues: revenuesResult.count || 0,
+        totalAwsCosts: awsCostsResult.count || 0,
+        totalAuditRuns: auditRunsResult.count || 0,
         lastRefreshed: new Date().toISOString(),
       },
     };

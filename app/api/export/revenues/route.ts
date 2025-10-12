@@ -6,9 +6,9 @@ export async function GET(request: NextRequest) {
   try {
     const supabase = createServiceRoleClient();
 
-    // Fetch all income data
+    // Fetch all revenues data
     const { data, error } = await supabase
-      .from("income")
+      .from("revenues")
       .select("*");
 
     if (error) {
@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
     }
 
     if (!data || data.length === 0) {
-      return new Response(JSON.stringify({ error: "No income data found" }), {
+      return new Response(JSON.stringify({ error: "No revenues data found" }), {
         status: 404,
         headers: { "Content-Type": "application/json" },
       });
@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
 
     // Generate filename with timestamp
     const timestamp = new Date().toISOString().split("T")[0];
-    const filename = `income_${timestamp}.csv`;
+    const filename = `revenues_${timestamp}.csv`;
 
     // Return CSV response
     return createCSVResponse(csv, filename);

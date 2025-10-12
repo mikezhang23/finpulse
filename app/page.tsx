@@ -28,28 +28,28 @@ export default async function Home() {
 
               <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700 shadow-sm">
                 <div className="text-sm text-gray-600 dark:text-gray-400 mb-2">
-                  Total Income
+                  Total Revenues
                 </div>
                 <div className="text-3xl font-bold text-green-600 dark:text-green-400">
-                  {result.kpis.totalIncome}
+                  {result.kpis.totalRevenues}
                 </div>
               </div>
 
               <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700 shadow-sm">
                 <div className="text-sm text-gray-600 dark:text-gray-400 mb-2">
-                  Total Accounts
+                  Total AWS Costs
                 </div>
                 <div className="text-3xl font-bold text-purple-600 dark:text-purple-400">
-                  {result.kpis.totalAccounts}
+                  {result.kpis.totalAwsCosts}
                 </div>
               </div>
 
               <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700 shadow-sm">
                 <div className="text-sm text-gray-600 dark:text-gray-400 mb-2">
-                  Total Budgets
+                  Total Audit Runs
                 </div>
                 <div className="text-3xl font-bold text-orange-600 dark:text-orange-400">
-                  {result.kpis.totalBudgets}
+                  {result.kpis.totalAuditRuns}
                 </div>
               </div>
             </div>
