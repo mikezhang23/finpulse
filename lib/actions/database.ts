@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@supabase/supabase-js";
+import { createServiceRoleClient } from "@/lib/supabase/server";
 
 interface ConnectionStatus {
   connected: boolean;
@@ -12,6 +13,14 @@ interface TableInfo {
   name: string;
   count: number | null;
   error?: string;
+}
+
+interface KPIData {
+  totalExpenses: number;
+  totalIncome: number;
+  totalAccounts: number;
+  totalBudgets: number;
+  lastRefreshed: string;
 }
 
 export async function testSupabaseConnection(): Promise<ConnectionStatus> {
@@ -52,6 +61,46 @@ export async function testSupabaseConnection(): Promise<ConnectionStatus> {
       connected: false,
       timestamp,
       error: error instanceof Error ? error.message : String(error)
+    };
+  }
+}
+
+export async function refreshAndValidateData(): Promise<{
+  success: boolean;
+  kpis?: KPIData;
+  error?: string;
+}> {
+  try {
+    const supabase = createServiceRoleClient();
+
+    // Fetch counts from all tables in parallel
+    const [expensesResult, incomeResult, accountsResult, budgetsResult] = await Promise.all([
+      supabase.from('expenses').select('*', { count: 'exact', head: true }),
+      supabase.from('income').select('*', { count: 'exact', head: true }),
+      supabase.from('accounts').select('*', { count: 'exact', head: true }),
+      supabase.from('budgets').select('*', { count: 'exact', head: true }),
+    ]);
+
+    // Check for errors
+    if (expensesResult.error) throw new Error(`Expenses: ${expensesResult.error.message}`);
+    if (incomeResult.error) throw new Error(`Income: ${incomeResult.error.message}`);
+    if (accountsResult.error) throw new Error(`Accounts: ${accountsResult.error.message}`);
+    if (budgetsResult.error) throw new Error(`Budgets: ${budgetsResult.error.message}`);
+
+    return {
+      success: true,
+      kpis: {
+        totalExpenses: expensesResult.count || 0,
+        totalIncome: incomeResult.count || 0,
+        totalAccounts: accountsResult.count || 0,
+        totalBudgets: budgetsResult.count || 0,
+        lastRefreshed: new Date().toISOString(),
+      },
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : String(error),
     };
   }
 }
