@@ -21,6 +21,8 @@ interface KPIData {
   totalAwsCosts: number;
   totalAuditRuns: number;
   lastRefreshed: string;
+  expensesData?: unknown[];
+  revenuesData?: unknown[];
 }
 
 export async function testSupabaseConnection(): Promise<ConnectionStatus> {
@@ -73,12 +75,14 @@ export async function refreshAndValidateData(): Promise<{
   try {
     const supabase = createServiceRoleClient();
 
-    // Fetch counts from all tables in parallel
-    const [expensesResult, revenuesResult, awsCostsResult, auditRunsResult] = await Promise.all([
+    // Fetch counts and data from all tables in parallel
+    const [expensesResult, revenuesResult, awsCostsResult, auditRunsResult, expensesDataResult, revenuesDataResult] = await Promise.all([
       supabase.from('expenses').select('*', { count: 'exact', head: true }),
       supabase.from('revenues').select('*', { count: 'exact', head: true }),
       supabase.from('aws_costs').select('*', { count: 'exact', head: true }),
       supabase.from('audit_runs').select('*', { count: 'exact', head: true }),
+      supabase.from('expenses').select('*').order('txn_date', { ascending: false }).limit(100),
+      supabase.from('revenues').select('*').order('txn_date', { ascending: false }).limit(100),
     ]);
 
     // Check for errors
@@ -95,6 +99,8 @@ export async function refreshAndValidateData(): Promise<{
         totalAwsCosts: awsCostsResult.count || 0,
         totalAuditRuns: auditRunsResult.count || 0,
         lastRefreshed: new Date().toISOString(),
+        expensesData: expensesDataResult.data || [],
+        revenuesData: revenuesDataResult.data || [],
       },
     };
   } catch (error) {

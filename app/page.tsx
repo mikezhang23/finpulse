@@ -1,13 +1,15 @@
 import { refreshAndValidateData } from "@/lib/actions/database";
 import RefreshButton from "@/app/components/RefreshButton";
 import LastRefreshed from "@/app/components/LastRefreshed";
+import ExpensesTable from "@/app/components/ExpensesTable";
+import RevenuesTable from "@/app/components/RevenuesTable";
 
 export default async function Home() {
   const result = await refreshAndValidateData();
 
   return (
     <div className="min-h-screen p-8">
-      <div className="max-w-6xl mx-auto">
+      <div className="max-w-7xl mx-auto">
         <div className="flex items-center justify-between mb-8">
           <h1 className="text-4xl font-bold">FinPulse Dashboard</h1>
           <RefreshButton />
@@ -55,7 +57,20 @@ export default async function Home() {
             </div>
 
             {/* Last Refreshed */}
-            <LastRefreshed timestamp={result.kpis.lastRefreshed} />
+            <div className="mb-8">
+              <LastRefreshed timestamp={result.kpis.lastRefreshed} />
+            </div>
+
+            {/* Data Tables */}
+            <div className="space-y-8">
+              {result.kpis.expensesData && result.kpis.expensesData.length > 0 && (
+                <ExpensesTable data={result.kpis.expensesData as any} />
+              )}
+
+              {result.kpis.revenuesData && result.kpis.revenuesData.length > 0 && (
+                <RevenuesTable data={result.kpis.revenuesData as any} />
+              )}
+            </div>
           </>
         ) : (
           <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-6">
