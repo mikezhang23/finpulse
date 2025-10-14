@@ -12,7 +12,28 @@ export default async function Home() {
       <div className="max-w-7xl mx-auto">
         <div className="flex items-center justify-between mb-8">
           <h1 className="text-4xl font-bold">FinPulse Dashboard</h1>
-          <RefreshButton />
+          <div className="flex gap-3">
+            <a
+              href="/audit"
+              className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors flex items-center gap-2"
+            >
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+              Audit & Compliance
+            </a>
+            <RefreshButton />
+          </div>
         </div>
 
         {result.success && result.kpis ? (

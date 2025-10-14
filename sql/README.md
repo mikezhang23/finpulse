@@ -120,8 +120,28 @@ After implementing RLS:
 1. ✅ Verify application still works
 2. ✅ Test CSV exports
 3. ✅ Monitor Supabase logs
-4. Consider adding user-specific policies
-5. Document role assignment process
+4. ✅ Implement audit logging and validation checks (Step 5B)
+5. Consider adding user-specific policies
+6. Document role assignment process
+
+## Step 5B: Audit Logging & Validation
+
+After implementing RLS, continue with audit logging:
+
+**Execute:** `sql/05_create_validation_view.sql`
+- Creates `v_validation_checks` view with 10 automated checks
+- Categories: DATA_QUALITY, COMPLIANCE, DATA_COMPLETENESS
+- Grants SELECT to `fin_reader` role
+
+**Features:**
+- ✅ Named, automated validation checks
+- ✅ Audit trail for every validation run
+- ✅ Validation Summary panel UI
+- ✅ Audit Log with historical runs
+- ✅ Snapshot viewer for compliance
+
+**Access:**
+Navigate to `/audit` in the application to view validation and audit features.
 
 ## Troubleshooting
 
