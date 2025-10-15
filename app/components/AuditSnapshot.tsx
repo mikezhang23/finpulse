@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { getAuditSnapshots } from "@/lib/actions/audit";
-import type { AuditSnapshot as AuditSnapshotType } from "@/lib/actions/audit";
+import { getAuditSnapshots, getAuditRuns } from "@/lib/actions/audit";
+import type { AuditSnapshot as AuditSnapshotType, AuditRun, AuditSnapshotJson } from "@/lib/actions/audit";
 
 interface AuditSnapshotProps {
   auditRunId: string | null;
@@ -10,15 +10,19 @@ interface AuditSnapshotProps {
 
 export default function AuditSnapshot({ auditRunId }: AuditSnapshotProps) {
   const [snapshots, setSnapshots] = useState<AuditSnapshotType[]>([]);
+  const [snapshotJson, setSnapshotJson] = useState<AuditSnapshotJson | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(
     new Set()
   );
+  const [showJsonView, setShowJsonView] = useState(false);
+  const [showAnomalies, setShowAnomalies] = useState(true);
 
   useEffect(() => {
     if (!auditRunId) {
       setSnapshots([]);
+      setSnapshotJson(null);
       return;
     }
 
@@ -26,17 +30,28 @@ export default function AuditSnapshot({ auditRunId }: AuditSnapshotProps) {
       setLoading(true);
       setError(null);
 
-      const result = await getAuditSnapshots(auditRunId);
+      const [snapshotResult, runResult] = await Promise.all([
+        getAuditSnapshots(auditRunId),
+        getAuditRuns(100), // Fetch enough to find our run
+      ]);
 
       setLoading(false);
 
-      if (result.success && result.snapshots) {
-        setSnapshots(result.snapshots);
+      if (snapshotResult.success && snapshotResult.snapshots) {
+        setSnapshots(snapshotResult.snapshots);
         // Auto-expand all categories
-        const categories = new Set(result.snapshots.map((s) => s.category));
+        const categories = new Set(snapshotResult.snapshots.map((s) => s.category));
         setExpandedCategories(categories);
       } else {
-        setError(result.error || "Failed to fetch snapshots");
+        setError(snapshotResult.error || "Failed to fetch snapshots");
+      }
+
+      // Get the snapshot JSON from the audit run
+      if (runResult.success && runResult.runs) {
+        const run = runResult.runs.find((r) => r.id === auditRunId);
+        if (run && run.snapshot_json) {
+          setSnapshotJson(run.snapshot_json);
+        }
       }
     };
 
@@ -161,6 +176,103 @@ export default function AuditSnapshot({ auditRunId }: AuditSnapshotProps) {
         </div>
       )}
 
+      {/* Anomalies Section */}
+      {!loading && !error && snapshotJson && snapshotJson.anomalies.length > 0 && (
+        <div className="border-b border-gray-200 dark:border-gray-700">
+          <button
+            onClick={() => setShowAnomalies(!showAnomalies)}
+            className="w-full flex items-center justify-between p-4 hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors"
+          >
+            <div className="flex items-center gap-3">
+              <svg
+                className={`w-5 h-5 transition-transform ${showAnomalies ? "rotate-90" : ""}`}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+              <span className="font-medium text-gray-900 dark:text-gray-100">
+                Detected Anomalies
+              </span>
+              <span className="text-sm text-gray-500 dark:text-gray-400">
+                ({snapshotJson.anomalies.length} found)
+              </span>
+            </div>
+            <div className="flex gap-2">
+              {snapshotJson.summary.criticalAnomalies > 0 && (
+                <span className="px-2 py-1 rounded text-xs font-medium bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300">
+                  {snapshotJson.summary.criticalAnomalies} CRITICAL
+                </span>
+              )}
+              {snapshotJson.summary.warningAnomalies > 0 && (
+                <span className="px-2 py-1 rounded text-xs font-medium bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300">
+                  {snapshotJson.summary.warningAnomalies} WARNING
+                </span>
+              )}
+              {snapshotJson.summary.infoAnomalies > 0 && (
+                <span className="px-2 py-1 rounded text-xs font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300">
+                  {snapshotJson.summary.infoAnomalies} INFO
+                </span>
+              )}
+            </div>
+          </button>
+
+          {showAnomalies && (
+            <div className="bg-gray-50 dark:bg-gray-900 px-4 pb-4">
+              {snapshotJson.anomalies.map((anomaly, idx) => (
+                <div
+                  key={idx}
+                  className={`mt-3 p-4 rounded-lg border ${
+                    anomaly.severity === 'CRITICAL'
+                      ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800 text-red-900 dark:text-red-100'
+                      : anomaly.severity === 'WARNING'
+                      ? 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800 text-yellow-900 dark:text-yellow-100'
+                      : 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800 text-blue-900 dark:text-blue-100'
+                  }`}
+                >
+                  <div className="flex items-start justify-between mb-2">
+                    <div>
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-lg font-semibold">
+                          {anomaly.type === 'SPIKE' ? '📈' : '📉'}
+                        </span>
+                        <span className="font-medium">
+                          {anomaly.severity} {anomaly.type}
+                        </span>
+                        <span className="text-sm opacity-75">on {anomaly.date}</span>
+                      </div>
+                      <div className="text-sm">
+                        Cost: <strong>${anomaly.value.toFixed(2)}</strong> (avg: ${anomaly.mean.toFixed(2)})
+                        <span className="ml-2">
+                          Deviation: <strong>{anomaly.deviationPercent > 0 ? '+' : ''}{anomaly.deviationPercent.toFixed(1)}%</strong>
+                        </span>
+                        <span className="ml-2 opacity-75">
+                          Z-score: {anomaly.zScore.toFixed(2)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  {anomaly.explanation && (
+                    <div className="mt-3 p-3 bg-white dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-700">
+                      <div className="flex items-center gap-2 mb-2">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                          AI Explanation {anomaly.explanationSource && `(${anomaly.explanationSource})`}
+                        </span>
+                      </div>
+                      <p className="text-sm text-gray-700 dark:text-gray-300">{anomaly.explanation}</p>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Snapshots by Category */}
       {!loading && !error && (
         <div className="divide-y divide-gray-200 dark:divide-gray-700">
@@ -270,6 +382,41 @@ export default function AuditSnapshot({ auditRunId }: AuditSnapshotProps) {
       {!loading && !error && snapshots.length === 0 && (
         <div className="p-8 text-center text-gray-500 dark:text-gray-400">
           <p>No snapshot data found for this audit run.</p>
+        </div>
+      )}
+
+      {/* JSON Snapshot Viewer */}
+      {!loading && !error && snapshotJson && (
+        <div className="border-t border-gray-200 dark:border-gray-700">
+          <button
+            onClick={() => setShowJsonView(!showJsonView)}
+            className="w-full flex items-center justify-between p-4 hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors"
+          >
+            <div className="flex items-center gap-3">
+              <svg
+                className={`w-5 h-5 transition-transform ${showJsonView ? "rotate-90" : ""}`}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+              <span className="font-medium text-gray-900 dark:text-gray-100">
+                Full JSON Snapshot
+              </span>
+              <span className="text-xs font-mono bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">
+                Technical View
+              </span>
+            </div>
+          </button>
+
+          {showJsonView && (
+            <div className="bg-gray-900 p-4 overflow-x-auto">
+              <pre className="text-xs text-green-400 font-mono">
+                {JSON.stringify(snapshotJson, null, 2)}
+              </pre>
+            </div>
+          )}
         </div>
       )}
     </div>

@@ -92,6 +92,11 @@ export default function AuditLog({
                   <span className={getStatusBadge(run.overall_status)}>
                     {run.overall_status}
                   </span>
+                  {run.anomalies_count !== undefined && run.anomalies_count > 0 && (
+                    <span className="px-2 py-1 rounded-full text-xs font-medium bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300">
+                      {run.anomalies_count} anomal{run.anomalies_count > 1 ? 'ies' : 'y'}
+                    </span>
+                  )}
                 </div>
                 <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
                   <svg
@@ -111,6 +116,11 @@ export default function AuditLog({
                   <span className="text-gray-400 dark:text-gray-600">•</span>
                   <span>{getRelativeTime(run.run_at)}</span>
                 </div>
+                {run.note && (
+                  <p className="mt-2 text-xs text-gray-600 dark:text-gray-400 line-clamp-2">
+                    {run.note}
+                  </p>
+                )}
               </div>
             </div>
 
