@@ -1,11 +1,21 @@
 import { refreshAndValidateData } from "@/lib/actions/database";
+import { detectAwsCostAnomalies } from "@/lib/actions/anomalies";
+import { getAwsCostOptimization } from "@/lib/actions/cost-optimization";
 import RefreshButton from "@/app/components/RefreshButton";
 import LastRefreshed from "@/app/components/LastRefreshed";
 import ExpensesTable from "@/app/components/ExpensesTable";
 import RevenuesTable from "@/app/components/RevenuesTable";
+import RevenueByDayChart from "@/app/components/RevenueByDayChart";
+import ExpenseByDayChart from "@/app/components/ExpenseByDayChart";
+import ExpenseByDeptChart from "@/app/components/ExpenseByDeptChart";
+import AwsCostByDeptChart from "@/app/components/AwsCostByDeptChart";
+import AnomaliesPanel from "@/app/components/AnomaliesPanel";
+import AwsCostOptimizationPanel from "@/app/components/AwsCostOptimizationPanel";
 
 export default async function Home() {
   const result = await refreshAndValidateData();
+  const anomaliesResult = await detectAwsCostAnomalies(1.5);
+  const optimizationResult = await getAwsCostOptimization();
 
   return (
     <div className="min-h-screen p-8">
@@ -82,8 +92,44 @@ export default async function Home() {
               <LastRefreshed timestamp={result.kpis.lastRefreshed} />
             </div>
 
+            {/* Anomalies Section */}
+            {anomaliesResult.success && anomaliesResult.anomalies && (
+              <div className="mb-8">
+                <AnomaliesPanel anomalies={anomaliesResult.anomalies} />
+              </div>
+            )}
+
+            {/* Cost Optimization Section */}
+            {optimizationResult.success && optimizationResult.data && (
+              <div className="mb-8">
+                <AwsCostOptimizationPanel data={optimizationResult.data} />
+              </div>
+            )}
+
+            {/* Charts Section */}
+            <div className="mb-8">
+              <h2 className="text-2xl font-semibold mb-4">Financial Trends</h2>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                {result.kpis.revenueByDay && (
+                  <RevenueByDayChart data={result.kpis.revenueByDay} />
+                )}
+                {result.kpis.expenseByDay && (
+                  <ExpenseByDayChart data={result.kpis.expenseByDay} />
+                )}
+              </div>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {result.kpis.expenseByDept && (
+                  <ExpenseByDeptChart data={result.kpis.expenseByDept} />
+                )}
+                {result.kpis.awsCostByDept && (
+                  <AwsCostByDeptChart data={result.kpis.awsCostByDept} />
+                )}
+              </div>
+            </div>
+
             {/* Data Tables */}
             <div className="space-y-8">
+              <h2 className="text-2xl font-semibold">Recent Transactions</h2>
               {result.kpis.expensesData && result.kpis.expensesData.length > 0 && (
                 <ExpensesTable data={JSON.parse(JSON.stringify(result.kpis.expensesData))} />
               )}

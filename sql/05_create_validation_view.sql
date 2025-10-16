@@ -45,10 +45,10 @@ aws_cost_amounts AS (
     SELECT
         'AWS Cost Amounts Valid' as check_name,
         'DATA_QUALITY' as category,
-        COUNT(*) FILTER (WHERE cost_amount <= 0) as failures,
+        COUNT(*) FILTER (WHERE cost_usd <= 0) as failures,
         COUNT(*) as total,
         CASE
-            WHEN COUNT(*) FILTER (WHERE cost_amount <= 0) = 0 THEN 'PASS'
+            WHEN COUNT(*) FILTER (WHERE cost_usd <= 0) = 0 THEN 'PASS'
             ELSE 'FAIL'
         END as status,
         'AWS costs must be greater than 0' as description
